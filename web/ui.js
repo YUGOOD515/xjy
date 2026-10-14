@@ -66,7 +66,7 @@ export const assetFor = (symbol) =>
   };
 export function assetTag(symbol) {
   const c = assetFor(symbol);
-  return `<a class="asset-tag" href="/coins/${encodeURIComponent(symbol)}"><canvas data-coin="${esc(symbol)}" data-size="small" role="img" aria-label="${esc(symbol)} 身份指纹，未绑定此处行情"></canvas><span>${esc(symbol)}<small>${esc(c.cn || c.name)}</small></span></a>`;
+  return `<a class="asset-tag inline-flex items-center gap-[9px] min-w-[110px] [vertical-align:middle] text-ink" href="/coins/${encodeURIComponent(symbol)}"><canvas data-coin="${esc(symbol)}" data-size="small" role="img" aria-label="${esc(symbol)} 身份指纹，未绑定此处行情"></canvas><span>${esc(symbol)}<small>${esc(c.cn || c.name)}</small></span></a>`;
 }
 export function mountIdentity(root) {
   return mountFingerprints(
@@ -76,28 +76,28 @@ export function mountIdentity(root) {
   );
 }
 export function pageHead(title, description, scope = "Ethereum 专属") {
-  return `<div class="workspace-heading"><div><p class="scope-label">${esc(scope)}</p><h1>${esc(title)}</h1><p>${esc(description)}</p></div><div class="workspace-asset">${assetTag("ETH")}<small>身份指纹 · 各模块数据来源独立</small></div></div>`;
+  return `<div class="workspace-heading grid grid-cols-[1fr_auto] gap-[35px] items-center [padding:22px_0_35px] [border-bottom:1px_solid_var(--color-ink)] mb-[26px] phone:grid-cols-[1fr] phone:gap-6 phone:[padding:12px_0_24px]"><div><p class="scope-label text-[11px] text-clay-dark m-0">${esc(scope)}</p><h1>${esc(title)}</h1><p>${esc(description)}</p></div><div class="workspace-asset min-w-[200px] tablet:min-w-[150px] phone:flex phone:gap-6 phone:items-center">${assetTag("ETH")}<small>身份指纹 · 各模块数据来源独立</small></div></div>`;
 }
 export function badge(text, tone = "") {
-  return `<span class="badge ${tone}">${esc(text)}</span>`;
+  return `<span class="badge inline-block [border:1px_solid_#b4baa5] [padding:4px_8px] [vertical-align:middle] [margin:0_8px_6px_0] text-ink-soft ${tone}">${esc(text)}</span>`;
 }
 export function panel(title, body, extra = "") {
-  return `<section class="workspace-panel ${extra}"><h2>${esc(title)}</h2>${body}</section>`;
+  return `<section class="workspace-panel [border-top:2px_solid_var(--color-ink)] [padding:23px_0] min-w-0 phone:[padding:22px_0] ${extra}"><h2>${esc(title)}</h2>${body}</section>`;
 }
 export function list(items) {
-  return `<ul class="findings-list">${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  return `<ul class="findings-list pl-[18px] [margin:14px_0]">${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
 }
 export function table(headers, rows) {
-  return `<div class="table-scroll"><table><thead><tr>${headers.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  return `<div class="table-scroll [overflow-x:auto] max-w-full [margin:20px_0]"><table><thead><tr>${headers.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 export function facts(items) {
-  return `<dl class="facts-grid">${items.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+  return `<dl class="facts-grid grid grid-cols-[1fr_1fr] [gap:22px_28px] [margin:23px_0] tablet:gap-[18px] phone:[gap:20px_14px]">${items.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
 }
 export function explorer(kind, value) {
-  return `<a class="external-link" href="https://etherscan.io/${kind}/${encodeURIComponent(value)}" target="_blank" rel="noopener noreferrer"><code>${esc(value)}</code> ↗</a>`;
+  return `<a class="external-link text-clay-dark [text-decoration:underline] [text-underline-offset:3px]" href="https://etherscan.io/${kind}/${encodeURIComponent(value)}" target="_blank" rel="noopener noreferrer"><code>${esc(value)}</code> ↗</a>`;
 }
 export function rawDetails(value, label = "完整数据与出处") {
-  return `<details class="raw-details"><summary>${esc(label)}</summary><pre>${esc(JSON.stringify(value, null, 2))}</pre></details>`;
+  return `<details class="raw-details [border-top:1px_solid_var(--color-line)] [padding:16px_0] [margin:16px_0]"><summary>${esc(label)}</summary><pre>${esc(JSON.stringify(value, null, 2))}</pre></details>`;
 }
 export async function request(url, schema, options = {}) {
   const response = await fetch(url, { cache: "no-store", ...options });

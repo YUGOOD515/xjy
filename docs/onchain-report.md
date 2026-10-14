@@ -1,3 +1,5 @@
+> 2026-10-14：`POST /api/onchain-analysis` 已删除，本文仅作历史记录；同一分析可用 `pnpm data:analyze --wallet ADDRESS --json` 在本地运行。
+>
 > 2026-10-08 迁移说明：本文保留旧钱包链上报告的历史记录。当前 `/report` 已采用 [WebMCP 外部 Agent 调查](webmcp-reports.md)，不再展示或调用内置模型。`POST /api/onchain-analysis` 的 RULES 用法保留，AI 请求返回 410 / AI_MODE_REMOVED，下面历史 AI 配置不再启用真实报告流程。
 
 # 真实只读异动报告

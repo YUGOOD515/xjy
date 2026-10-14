@@ -243,7 +243,7 @@ paths:
         '503': { description: SNAPSHOT_UNAVAILABLE }
 ```
 
-旧 `POST /api/onchain-analysis` 保留独立的链上只读合同：`investigationMode: "RULES"` 仍走原 RPC 核验；`investigationMode: "AI"` 返回 `410 AI_MODE_REMOVED`，提示改用 `/report` 的外部 Agent。旧 RULES 路径的 RPC 配置要求没有变，不应和此处不需要 RPC key 的市场采集合并描述。
+旧 `POST /api/onchain-analysis` 钱包链上报告接口已于 2026-10-14 删除；同一 A→B 只读分析仍可通过 `pnpm data:analyze` CLI 运行（需要 `ETHEREUM_RPC_URL`），不应和此处不需要 RPC key 的市场采集合并描述。
 
 ## 当前验证范围
 

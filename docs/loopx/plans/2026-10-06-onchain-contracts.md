@@ -20,7 +20,7 @@ slices:
 
 新增独立schema，经公共入口导出及infer类型；冻结字段、正基线、有限ratio、窗口、去重计数口径和分类证据。关键边界与示例可解析。
 
-> writes: `src/domain/schemas/onchain.ts, src/domain/schemas/index.ts, src/domain/types/index.ts, tests/onchain-contracts.test.ts, .loopx/intake/2026-10-06-onchain-contracts/, docs/loopx/design/2026-10-06-onchain-contracts/, docs/loopx/plans/2026-10-06-onchain-contracts.md`
+> writes: `src/domain/schemas/onchain.ts, src/domain/schemas/index.ts, src/domain/types/index.ts, tests/onchain-contracts.test.ts, docs/loopx/intake/2026-10-06-onchain-contracts/, docs/loopx/design/2026-10-06-onchain-contracts/, docs/loopx/plans/2026-10-06-onchain-contracts.md`
 > anchors: `AC-001..004, D-001..003, TC-001..004`
 > verify: `pnpm exec vitest run tests/onchain-contracts.test.ts; pnpm typecheck`
 > review: 三分支必填字段、ratio/时间/计数校验、导出不破坏旧合同

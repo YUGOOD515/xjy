@@ -1,10 +1,8 @@
 import * as rescue from "../src/app/api/rescue/route";
 import * as monitor from "../src/app/api/monitor/route";
 import * as policy from "../src/app/api/policy/route";
-import * as position from "../src/app/api/position/route";
 import * as investigation from "../src/app/api/transaction-checks/route";
 import * as research from "../src/app/api/eth-risk/route";
-import * as onchainAnalysis from "../src/app/api/onchain-analysis/route";
 import { market, detail } from "./fingerprint.js";
 import { SnapshotSchema } from "../src/modules/eth-report/contracts";
 import { collectSnapshot } from "./eth-report";
@@ -33,10 +31,8 @@ const routes: Record<string, Record<string, Handler>> = {
   "/api/rescue": { POST: rescue.POST },
   "/api/monitor": { GET: monitor.GET, POST: monitor.POST },
   "/api/policy": { GET: policy.GET, PUT: policy.PUT },
-  "/api/position": { POST: position.POST },
   "/api/transaction-checks": { POST: investigation.POST },
   "/api/eth-risk": { GET: research.GET },
-  "/api/onchain-analysis": { POST: onchainAnalysis.POST },
   "/api/eth-report-snapshot": { GET: ethReportSnapshot },
   "/api/market": {
     GET: async () =>

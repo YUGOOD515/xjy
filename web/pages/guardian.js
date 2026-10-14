@@ -47,7 +47,7 @@ export function sessionHTML(session, status) {
         esc(a.category),
       ]),
     );
-  return `<div class="workspace-section-title"><h2>本次观察与执行</h2>${VerificationBadge({ verification })}</div><div class="workspace-grid">${panel(
+  return `<div class="workspace-section-title flex items-center justify-between gap-[15px] [padding:25px_0_8px] phone:items-start"><h2>本次观察与执行</h2>${VerificationBadge({ verification })}</div><div class="workspace-grid grid grid-cols-[1fr_1fr] gap-7 [margin:24px_0] tablet:gap-[22px] phone:grid-cols-[1fr] phone:gap-[22px]">${panel(
     "执行前组合",
     facts([
       ["组合估值", money(before.totalUsd)],
@@ -110,7 +110,7 @@ export async function mount(root) {
       "保护实验",
       "保留单钱包策略门控、事件去重与独立结果核验。行情指纹不构成交易授权。",
     ) +
-    `<div class="notice">此功能仅支持既有 ETH → USDC 保护实验。真实行情指纹不会驱动后台交易；运行模式由服务端配置。</div><div id="guardian-state" class="loading">正在读取本机状态…</div><div id="guardian-controls"></div><p id="guardian-message" role="status" class="note"></p><div id="guardian-results"></div>`;
+    `<div class="notice [color:#785133] [border-left:3px_solid_var(--color-clay)] [background:#ede2cf] [padding:13px_17px] [margin:20px_0]">此功能仅支持既有 ETH → USDC 保护实验。真实行情指纹不会驱动后台交易；运行模式由服务端配置。</div><div id="guardian-state" class="loading text-[13px] text-ink-soft">正在读取本机状态…</div><div id="guardian-controls"></div><p id="guardian-message" role="status" class="note"></p><div id="guardian-results"></div>`;
   const fields = [
     ["minRiskScore", "风险分数高于", 1],
     ["minConfidence", "置信度高于 / %", 100],
@@ -119,14 +119,14 @@ export async function mount(root) {
   ];
   function renderControls() {
     root.querySelector("#guardian-controls").innerHTML =
-      `<div class="workspace-grid">${panel("观察与监控", `<label>受保护钱包<input readonly value="${esc(status.wallet)}"></label><div class="action-row"><button class="button-primary" data-guardian="run">运行一次保护流程</button><button class="button-secondary" data-guardian="start">启动监控</button><button class="button-secondary" data-guardian="pause">暂停监控</button></div><p class="note">单次运行与后台监控均可能按已保存策略执行一次 ${esc(status.mode)} 减仓。暂停不撤销已经广播的交易。</p><p class="note">恢复阈值为演示规则：连续 3 个新鲜样本，波动代理 ≤40、5m ≥−0.5%、1h ≥−2%。</p>`)}${panel("策略配置", `<form id="policy-form"><div class="form-grid">${fields.map(([key, label, factor]) => `<label>${label}<input name="${key}" type="number" min="0" max="100" step="0.1" required value="${Number((policy.config[key] * factor).toFixed(6))}"></label>`).join("")}</div><div class="check-row"><label><input type="checkbox" name="allowETH" ${policy.config.allowedRiskAssets.includes("ETH") ? "checked" : ""}> 卖出 ETH（Fork 中为 WETH）</label><label><input type="checkbox" name="allowUSDC" ${policy.config.allowedDefensiveAssets.includes("USDC") ? "checked" : ""}> 接收 USDC</label></div><div class="action-row"><button class="button-primary" type="submit">保存策略</button><button type="button" class="button-secondary" data-guardian="reload">重读已保存配置</button></div><p class="note">已加载 v${policy.version}；保存不执行交易。版本冲突时先重读。</p></form>`)}</div><section class="workspace-panel"><h2>持久化事件</h2><div id="event-history"></div></section>`;
+      `<div class="workspace-grid grid grid-cols-[1fr_1fr] gap-7 [margin:24px_0] tablet:gap-[22px] phone:grid-cols-[1fr] phone:gap-[22px]">${panel("观察与监控", `<label>受保护钱包<input readonly value="${esc(status.wallet)}"></label><div class="action-row flex items-center gap-3 flex-wrap [margin:19px_0]"><button class="button-primary inline-flex justify-center items-center gap-[14px] [padding:12px_18px] min-h-[43px] [border:1px_solid_var(--color-ink)] [border-radius:3px] [background:var(--color-ink)] text-paper tablet:[padding:11px_13px]" data-guardian="run">运行一次保护流程</button><button class="button-secondary" data-guardian="start">启动监控</button><button class="button-secondary" data-guardian="pause">暂停监控</button></div><p class="note">单次运行与后台监控均可能按已保存策略执行一次 ${esc(status.mode)} 减仓。暂停不撤销已经广播的交易。</p><p class="note">恢复阈值为演示规则：连续 3 个新鲜样本，波动代理 ≤40、5m ≥−0.5%、1h ≥−2%。</p>`)}${panel("策略配置", `<form id="policy-form"><div class="form-grid grid grid-cols-[1fr_1fr] [gap:10px_20px]">${fields.map(([key, label, factor]) => `<label>${label}<input name="${key}" type="number" min="0" max="100" step="0.1" required value="${Number((policy.config[key] * factor).toFixed(6))}"></label>`).join("")}</div><div class="check-row flex flex-col gap-[7px] [margin:14px_0]"><label><input type="checkbox" name="allowETH" ${policy.config.allowedRiskAssets.includes("ETH") ? "checked" : ""}> 卖出 ETH（Fork 中为 WETH）</label><label><input type="checkbox" name="allowUSDC" ${policy.config.allowedDefensiveAssets.includes("USDC") ? "checked" : ""}> 接收 USDC</label></div><div class="action-row flex items-center gap-3 flex-wrap [margin:19px_0]"><button class="button-primary inline-flex justify-center items-center gap-[14px] [padding:12px_18px] min-h-[43px] [border:1px_solid_var(--color-ink)] [border-radius:3px] [background:var(--color-ink)] text-paper tablet:[padding:11px_13px]" type="submit">保存策略</button><button type="button" class="button-secondary" data-guardian="reload">重读已保存配置</button></div><p class="note">已加载 v${policy.version}；保存不执行交易。版本冲突时先重读。</p></form>`)}</div><section class="workspace-panel [border-top:2px_solid_var(--color-ink)] [padding:23px_0] min-w-0 phone:[padding:22px_0]"><h2>持久化事件</h2><div id="event-history"></div></section>`;
     refreshState();
   }
   function refreshState() {
     if (!status || !life.alive) return;
     const active = status.events.find((e) => e.id === status.activeEvent);
     root.querySelector("#guardian-state").innerHTML =
-      `<div class="status-band">${badge(status.mode)}${badge(status.halted ? "需要人工核查" : active?.status === "SUBMITTED_UNKNOWN" ? "等待回执" : status.enabled ? "监控中" : "监控暂停", status.halted ? "warn" : "")}<span>${esc(status.sources)}</span></div>${status.lastError ? `<p role="alert" class="error-band">${esc(status.lastError)}</p>` : ""}`;
+      `<div class="status-band flex flex-wrap items-center gap-3 [padding:15px_0] text-[11px] text-ink-soft">${badge(status.mode)}${badge(status.halted ? "需要人工核查" : active?.status === "SUBMITTED_UNKNOWN" ? "等待回执" : status.enabled ? "监控中" : "监控暂停", status.halted ? "warn" : "")}<span>${esc(status.sources)}</span></div>${status.lastError ? `<p role="alert" class="error-band">${esc(status.lastError)}</p>` : ""}`;
     for (const action of ["run", "start", "pause"]) {
       const el = root.querySelector(`[data-guardian="${action}"]`);
       if (el)
@@ -144,7 +144,7 @@ export async function mount(root) {
         ? status.events
             .map(
               (e) =>
-                `<details class="raw-details"><summary>${esc(e.status)} / ${time(e.createdAt)} / 策略 v${e.version}</summary><p>${esc(e.note)}</p><p>事件 ${esc(e.id)} · ${e.closedAt ? "市场已恢复" : "保留事件"} · 核验 ${esc(e.session?.verification.status || "未完成")}</p>${e.submissions.map((tx) => `<p>${esc(tx.kind)} <code>${esc(tx.hash)}</code></p>`).join("")}<p>冻结策略：Risk &gt; ${e.config.minRiskScore}，Confidence &gt; ${e.config.minConfidence * 100}%，Exposure &gt; ${e.config.minRiskExposurePct}%，最多降低 ${e.config.maxDeRiskPct} 个百分点。</p></details>`,
+                `<details class="raw-details [border-top:1px_solid_var(--color-line)] [padding:16px_0] [margin:16px_0]"><summary>${esc(e.status)} / ${time(e.createdAt)} / 策略 v${e.version}</summary><p>${esc(e.note)}</p><p>事件 ${esc(e.id)} · ${e.closedAt ? "市场已恢复" : "保留事件"} · 核验 ${esc(e.session?.verification.status || "未完成")}</p>${e.submissions.map((tx) => `<p>${esc(tx.kind)} <code>${esc(tx.hash)}</code></p>`).join("")}<p>冻结策略：Risk &gt; ${e.config.minRiskScore}，Confidence &gt; ${e.config.minConfidence * 100}%，Exposure &gt; ${e.config.minRiskExposurePct}%，最多降低 ${e.config.maxDeRiskPct} 个百分点。</p></details>`,
             )
             .join("")
         : '<p class="note">暂无事件。查看此页不会发起保护操作。</p>';

@@ -40,7 +40,7 @@ export function StressChart({ tests, baselineUsd }) {
         : 0) *
         124,
   }));
-  return `${baselineUsd > 0 ? `<svg class="research-chart" viewBox="0 0 690 190" role="img" aria-label="压力情景相对 Before 组合价值的百分比">${[28, 90, 152].map((y, i) => `<line x1="42" y1="${y}" x2="650" y2="${y}"/><text x="4" y="${y + 4}">${100 - i * 50}%</text>`).join("")}<polyline points="${points.map((p) => `${p.x},${p.y}`).join(" ")}"/>${tests.map((t, i) => `<circle cx="${points[i].x}" cy="${points[i].y}" r="4"/><text x="${points[i].x - 18}" y="178">${esc(t.priceChangePct)}%</text>`).join("")}</svg>` : ""}<p class="note">Before snapshot: ${money(baselineUsd)}</p>${table(
+  return `${baselineUsd > 0 ? `<svg class="research-chart w-full h-auto max-h-[250px] mt-[18px]" viewBox="0 0 690 190" role="img" aria-label="压力情景相对 Before 组合价值的百分比">${[28, 90, 152].map((y, i) => `<line x1="42" y1="${y}" x2="650" y2="${y}"/><text x="4" y="${y + 4}">${100 - i * 50}%</text>`).join("")}<polyline points="${points.map((p) => `${p.x},${p.y}`).join(" ")}"/>${tests.map((t, i) => `<circle cx="${points[i].x}" cy="${points[i].y}" r="4"/><text x="${points[i].x - 18}" y="178">${esc(t.priceChangePct)}%</text>`).join("")}</svg>` : ""}<p class="note">Before snapshot: ${money(baselineUsd)}</p>${table(
     ["ETH shock", "Projected value", "Projected loss"],
     tests.map((t) => [
       `${esc(t.priceChangePct)}%`,

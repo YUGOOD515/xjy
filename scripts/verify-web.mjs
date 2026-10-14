@@ -63,7 +63,6 @@ try {
     "/investigate",
     "/report",
     "/risk-lab",
-    "/position",
     "/attestations",
     "/collection",
   ];
@@ -104,9 +103,6 @@ try {
     (await api("/api/eth-risk")).body.dataMode,
     "MOCK_CHAIN_FIXTURE",
   );
-  const removedAI = await api("/api/onchain-analysis", "POST", { wallet, investigationMode: "AI" });
-  assert.equal(removedAI.response.status, 410);
-  assert.equal(removedAI.body.code, "AI_MODE_REMOVED");
   const invalidSnapshot = await api("/api/eth-report-snapshot?days=2");
   assert.equal(invalidSnapshot.response.status, 400);
   assert.equal(invalidSnapshot.body.code, "INVALID_WINDOW");

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
+import { encodeEventTopics, parseAbi } from "viem";
 
 const owner = "0x1111111111111111111111111111111111111111";
 const address = "0x2222222222222222222222222222222222222222";
@@ -16,28 +17,19 @@ vi.mock("../../web/fingerprint/render.js", () => ({
   mountSculpture: vi.fn(), sculptureFailureMessage: vi.fn(),
   setMotionPaused: vi.fn(), isMotionPaused: () => false,
 }));
-vi.mock("ethers", async (original) => ({
-  ...(await original<object>()),
-  BrowserProvider: class {
-    getNetwork = async () => ({ chainId: 677n });
-    getCode = async () => "0xcafe";
-    getSigner = async () => ({ getAddress: mocks.address });
-  },
-  ContractFactory: class {
-    deploy = mocks.deploy;
-  },
-  Contract: class {
-    minted = mocks.minted;
-    mint = mocks.mint;
-  },
-}));
+// Wallet transport (custom) and public RPC (http) clients are separate, as in the browser.
 vi.mock("viem", async (original) => ({
   ...(await original<object>()), http: mocks.http,
-  createPublicClient: () => ({ getChainId: mocks.chain, getTransactionReceipt: mocks.receipt,
-    getCode: mocks.code, readContract: mocks.read }),
+  custom: () => "wallet",
+  createWalletClient: () => ({ requestAddresses: async () => [await mocks.address()],
+    deployContract: mocks.deploy, writeContract: mocks.mint }),
+  createPublicClient: ({ transport }: { transport: unknown }) => transport === "wallet"
+    ? { getChainId: async () => 677, getCode: async () => "0xcafe", waitForTransactionReceipt: mocks.wait,
+      readContract: (args: { functionName: string }) => args.functionName === "minted" ? mocks.minted(args) : mocks.read(args) }
+    : { getChainId: mocks.chain, getTransactionReceipt: mocks.receipt, getCode: mocks.code, readContract: mocks.read },
 }));
 const artifact = {
-  abi: ["event FingerprintMinted(address indexed collector,uint256 indexed tokenId,bytes32 indexed digest)"],
+  abi: parseAbi(["event FingerprintMinted(address indexed collector,uint256 indexed tokenId,bytes32 indexed digest)"]),
   bytecode: "0xcafe", deployedBytecode: "0xcafe",
 };
 const metadata = { name: "ETH", properties: { capturedAt: "2026-10-07T10:30:00.000Z" } };
@@ -55,8 +47,8 @@ beforeEach(() => {
   mocks.receipt.mockResolvedValue(null);
   mocks.minted.mockResolvedValue(false);
   mocks.wait.mockRejectedValue(new Error("receipt timed out"));
-  mocks.mint.mockResolvedValue({ hash, wait: mocks.wait });
-  mocks.deploy.mockResolvedValue({ deploymentTransaction: () => ({ hash, wait: mocks.wait }) });
+  mocks.mint.mockResolvedValue(hash);
+  mocks.deploy.mockResolvedValue(hash);
   vi.stubGlobal("fetch", vi.fn(async () => Response.json(artifact)));
   Object.defineProperty(window, "ethereum", { configurable: true, value: {
     on() {}, request: vi.fn(async ({ method }: { method: string }) => method === "eth_chainId" ? "0x2a5" : [owner]),
@@ -206,9 +198,7 @@ it("reconstructs a successful collection from the stored edition and checks exac
   const nft = await import("../../web/fingerprint/nft.js");
   await expect(nft.mintEdition(edition, vi.fn())).rejects.toThrow("timed out");
   const job = JSON.parse(localStorage.getItem(key)!);
-  const { Interface } = await import("ethers");
-  const abi = new Interface(artifact.abi);
-  const log = abi.encodeEventLog(abi.getEvent("FingerprintMinted")!, [owner, 1n, job.digest]);
+  const log = { data: "0x", topics: encodeEventTopics({ abi: artifact.abi, eventName: "FingerprintMinted", args: { collector: owner, tokenId: 1n, digest: job.digest } }) };
   mocks.receipt.mockResolvedValueOnce({ transactionHash: hash, from: owner, to: address, status: "success", logs: [{ address, ...log }] });
   mocks.read.mockImplementation(async ({ functionName }: { functionName: string }) => functionName === "ownerOf" ? owner : functionName === "metadataHash" ? job.digest : edition.uri);
   const result = await nft.queryPendingTransaction(vi.fn());
@@ -235,9 +225,7 @@ it("displays only metadata and capture time from the verified URI when pending d
   job.edition.metadata = { name: "Different artwork" };
   job.edition.snapshot.capturedAt = "2020-01-01T00:00:00.000Z";
   localStorage.setItem(key, JSON.stringify(job));
-  const { Interface } = await import("ethers");
-  const abi = new Interface(artifact.abi);
-  const log = abi.encodeEventLog(abi.getEvent("FingerprintMinted")!, [owner, 1n, job.digest]);
+  const log = { data: "0x", topics: encodeEventTopics({ abi: artifact.abi, eventName: "FingerprintMinted", args: { collector: owner, tokenId: 1n, digest: job.digest } }) };
   mocks.receipt.mockResolvedValueOnce({ transactionHash: hash, from: owner, to: address, status: "success", logs: [{ address, ...log }] });
   mocks.read.mockImplementation(async ({ functionName }: { functionName: string }) => functionName === "ownerOf" ? owner : functionName === "metadataHash" ? job.digest : edition.uri);
   const record = await nft.queryPendingTransaction(vi.fn());

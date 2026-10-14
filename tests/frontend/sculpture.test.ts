@@ -2,44 +2,53 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { coins } from "../../web/fingerprint/data.js";
 import { sculptureFailureMessage } from "../../web/fingerprint/render.js";
-const state = vi.hoisted(() => ({
-  constructorFails: false,
-  shaderFails: false,
-  instances: [] as any[],
-}));
-vi.mock("three", async (original) => {
-  const actual = await original<object>();
-  return {
-    ...actual,
-    WebGLRenderer: class {
-      domElement = document.createElement("canvas");
-      debug = { onShaderError: null as any };
-      loop: any = null;
-      dispose = vi.fn();
-      setPixelRatio = vi.fn();
-      setSize = vi.fn();
-      constructor() {
-        if (state.constructorFails) throw new Error("context unavailable");
-        state.instances.push(this);
-      }
-      setAnimationLoop(callback: any) {
-        this.loop = callback;
-      }
-      render() {
-        if (state.shaderFails) this.debug.onShaderError?.();
-      }
-    },
-  };
-});
 import {
   createFluidMesh,
   mountFluid,
 } from "../../web/fingerprint/sculpture.js";
+
+const state = {
+  contextFails: false,
+  linkFails: false,
+  contexts: [] as any[],
+};
+// Minimal WebGL2 double: records calls, never touches a GPU.
+function fakeGL() {
+  const calls: [string, ...unknown[]][] = [];
+  const gl: any = new Proxy(
+    { calls },
+    {
+      get(target: any, key: string) {
+        if (key in target) return target[key];
+        if (/^[A-Z_0-9]+$/.test(key)) return key;
+        return (...args: unknown[]) => {
+          calls.push([key, ...args]);
+          if (key === "getShaderPrecisionFormat") return { precision: 23 };
+          if (key === "getProgramParameter") return !state.linkFails;
+          if (key === "getAttribLocation") return 0;
+          if (key.startsWith("create") || key === "getUniformLocation")
+            return { key, args };
+          return null;
+        };
+      },
+    },
+  );
+  return gl;
+}
 beforeEach(() => {
   document.body.innerHTML = '<div id="host"></div>';
-  state.instances = [];
-  state.constructorFails = false;
-  state.shaderFails = false;
+  state.contexts = [];
+  state.contextFails = false;
+  state.linkFails = false;
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
+    function (this: HTMLCanvasElement) {
+      if (state.contextFails) return null;
+      const gl = fakeGL();
+      gl.canvas = this;
+      state.contexts.push(gl);
+      return gl;
+    } as any,
+  );
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -47,13 +56,24 @@ beforeEach(() => {
       disconnect() {}
     },
   );
+  vi.stubGlobal(
+    "requestAnimationFrame",
+    vi.fn(() => 1),
+  );
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 const options = () => ({
   isPaused: () => false,
   reduced: () => false,
   onFailure: vi.fn(),
 });
+const called = (gl: any, name: string) =>
+  gl.calls.filter(([key]: [string]) => key === name);
+
 it("creates material directly from GLSL without evaluating Shader Park DSL", () => {
   const evaluate = vi.spyOn(globalThis, "eval").mockImplementation(() => {
     throw new Error("runtime eval must not be used");
@@ -61,53 +81,75 @@ it("creates material directly from GLSL without evaluating Shader Park DSL", () 
   try {
     const mesh = createFluidMesh(coins[0], { value: 68 });
     expect(mesh.material.fragmentShader).toContain("uniform float warp");
-    expect(mesh.material.uniforms._scale.value).toBe(1.5);
-    expect(mesh.material.uniforms.mood.value).toBe(0.68);
+    expect(mesh.material.uniforms._scale).toBe(1.5);
+    expect(mesh.material.uniforms.mood).toBe(0.68);
+    // THREE.SphereGeometry(1.5, 8, 8): 81 vertices, 112 triangles.
+    expect(mesh.geometry.position).toHaveLength(81 * 3);
+    expect(mesh.geometry.index).toHaveLength(336);
     expect(evaluate).not.toHaveBeenCalled();
-    mesh.geometry.dispose();
-    mesh.material.dispose();
   } finally {
     evaluate.mockRestore();
   }
 });
+it("compiles with the former Three.js WebGL2 prefix and renders the first frame", () => {
+  const host = document.querySelector("#host")!;
+  mountFluid(host, coins[0], null, options());
+  const gl = state.contexts[0],
+    [vertex, fragment] = called(gl, "shaderSource").map(
+      ([, , src]: any) => src,
+    );
+  expect(
+    vertex.startsWith("#version 300 es\nprecision mediump sampler2DArray;"),
+  ).toBe(true);
+  expect(fragment).toContain(
+    "layout(location = 0) out highp vec4 pc_fragColor;",
+  );
+  expect(fragment).toContain(
+    "precision highp float;\nprecision highp int;\n#define HIGH_PRECISION",
+  );
+  expect(called(gl, "drawElements")).toEqual([
+    ["drawElements", "TRIANGLES", 336, "UNSIGNED_SHORT", 0],
+  ]);
+  expect(host.querySelector("canvas")?.style.display).toBe("block");
+});
 it("detects first-frame GPU compile failure, disposes resources and preserves the existing DOM", () => {
-  state.shaderFails = true;
+  state.linkFails = true;
   const host = document.querySelector("#host")!;
   host.textContent = "placeholder";
   expect(() => mountFluid(host, coins[0], null, options())).toThrow(
     "SHADER_COMPILE",
   );
-  expect(state.instances[0].dispose).toHaveBeenCalledOnce();
+  expect(called(state.contexts[0], "deleteProgram")).toHaveLength(1);
   expect(host.textContent).toBe("placeholder");
-  expect(state.instances[0].loop).toBeNull();
+  expect(requestAnimationFrame).not.toHaveBeenCalled();
 });
-it("releases the renderer and reports context loss after mounting", () => {
+it("releases GPU resources and reports context loss after mounting", () => {
   const host = document.querySelector("#host")!,
     opts = options(),
     stop = mountFluid(host, coins[0], null, opts),
-    renderer = state.instances[0];
-  expect(host.querySelector("canvas")).not.toBeNull();
-  renderer.domElement.dispatchEvent(
-    new Event("webglcontextlost", { cancelable: true }),
-  );
+    gl = state.contexts[0],
+    canvas = host.querySelector("canvas")!;
+  expect(canvas).not.toBeNull();
+  canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
   expect(opts.onFailure).toHaveBeenCalledWith(
     expect.objectContaining({ code: "WEBGL_LOST" }),
   );
-  expect(renderer.dispose).toHaveBeenCalledOnce();
-  expect(renderer.loop).toBeNull();
+  expect(called(gl, "deleteProgram")).toHaveLength(1);
+  expect(cancelAnimationFrame).toHaveBeenCalledOnce();
+  expect(host.querySelector("canvas")).toBeNull();
   stop();
-  expect(renderer.dispose).toHaveBeenCalledOnce();
+  expect(called(gl, "deleteProgram")).toHaveLength(1);
 });
 it("does not blame module loading failures on device capability", () => {
   expect(
     sculptureFailureMessage(new ReferenceError("input is not defined")),
   ).toContain("加载或初始化失败");
-  state.constructorFails = true;
+  state.contextFails = true;
   expect(() =>
     mountFluid(document.querySelector("#host")!, coins[0], null, options()),
   ).toThrow("WEBGL_CONTEXT");
 });
-it("does not allocate a WebGL renderer for a view removed while importing", () => {
+it("does not allocate a WebGL context for a view removed while importing", () => {
   mountFluid(document.createElement("div"), coins[0], null, options())();
-  expect(state.instances).toHaveLength(0);
+  expect(state.contexts).toHaveLength(0);
 });

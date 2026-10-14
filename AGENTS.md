@@ -2,6 +2,7 @@
 
 - 全站前端统一为 `web/` 下的 HTML、CSS、原生 JavaScript、Tailwind。不要重新引入 React、Next 页面、JSX 或 iframe 子站。
 - 排版与分区采用瑞士国际主义；配色沿用 VERDANT 的 paper / sand / ink / moss / sage / clay。所有页面共享导航、设计变量与币种身份。
+- 设计变量只在 `web/style.css` 的 `@theme` 中定义一次；简单布局优先写 Tailwind 工具类（断点变体 `laptop:` / `tablet:` / `phone:`），类名保留为脚本与测试钩子。货币指纹使用原生 WebGL2，不重新引入 three 或 ethers。
 - 货币指纹是币种通用表现，复用统一注册表与绘制逻辑。ETH 专属研究和保护能力不得虚称已支持其他币种。
 - 用户负责视觉检查。不要启动浏览器、截图、执行视觉验收；根据用户反馈修改，并完成必要的构建、接口与功能检查。
 - TypeScript 后端保留共享 Zod 数据合同、真实/Mock/Fork 来源、固定钱包、Policy 权限、持久化事件去重和独立执行后核验。前端框架迁移不授权扩大交易范围。

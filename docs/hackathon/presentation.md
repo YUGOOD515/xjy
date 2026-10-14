@@ -52,7 +52,7 @@
 
 | 部分 | 入口 | 实际能力 | 边界 |
 | --- | --- | --- | --- |
-| 真实只读报告 | `/report` 页面 / `POST /api/onchain-analysis` | 同一快照：持仓＋行情＋相邻 5 分钟单池卖压 → 完整报告（事实/解释/未知项/引用）；**显式选择 RULES 或 AI 调查** | 单次只读；未校准规则；AI 为模型解释非自主 Agent；无交易权限 |
+| 真实只读报告 | `/report` 页面 / `POST /api/onchain-analysis`（该接口已于 2026-10-14 移除） | 同一快照：持仓＋行情＋相邻 5 分钟单池卖压 → 完整报告（事实/解释/未知项/引用）；**显式选择 RULES 或 AI 调查** | 单次只读；未校准规则；AI 为模型解释非自主 Agent；无交易权限 |
 | 量化观察与规则分析 | `pnpm data:analyze --wallet <地址> --json` | 主网共同快照 → 相邻 5 分钟窗口单池 gross sell-pressure → 确定性评分、引用与限制 | 单次只读；未校准规则；无 LLM / Policy / 执行 |
 | 具体交易证据核验 | `/investigate` 页面 / `POST /api/transaction-checks` | 外层交易＋回执＋区块＋固定池 Swap → 中文事实、未知项与来源 | 独立规则工具；非完整资金路径或身份调查 |
 | 受限保护实验（附录） | `/guardian` 与 Guardian API | Mock 或本机 Fork 下 Policy → 减仓 → 独立 after → 验证 | 演示风险输入；不代表主网自动交易 |
