@@ -30,6 +30,12 @@ const save = (key, value) => {
     return false;
   }
 };
+const BOT = {
+  id: 677,
+  name: NETWORK.chainName,
+  nativeCurrency: NETWORK.nativeCurrency,
+  rpcUrls: { default: { http: NETWORK.rpcUrls } },
+};
 export const wallet = { account: null, chainId: null };
 export const contractAddress = () => safeRead("cfp.contract.677", "");
 export const collections = () =>
@@ -153,13 +159,25 @@ async function signer() {
       });
     }
   }
-  const { BrowserProvider } = await import("ethers");
-  const provider = new BrowserProvider(window.ethereum);
-  if ((await provider.getNetwork()).chainId !== 677n)
+  const { createPublicClient, createWalletClient, custom } = await import("viem");
+  const transport = custom(window.ethereum);
+  const provider = createPublicClient({ chain: BOT, transport });
+  if ((await provider.getChainId()) !== 677)
     throw new Error("钱包尚未切换到 BOT Chain 主网，已停止操作。");
+  const client = createWalletClient({ chain: BOT, transport });
+  const [account] = await client.requestAddresses();
+  if (!account) throw new Error("没有可用的钱包账户。");
   wallet.chainId = NETWORK.chainId;
-  return { provider, signer: await provider.getSigner() };
+  return { provider, client, account };
 }
+// Same contract as the former wallet library: a reverted receipt rejects the wait,
+// leaving the reservation for an explicit original-hash query.
+const receiptOf = (provider) => async (hash) => {
+  const receipt = await provider.waitForTransactionReceipt({ hash, confirmations: 1, timeout: 60_000 });
+  if (receipt.status === "reverted") throw new Error("transaction execution reverted");
+  return receipt;
+};
+const bytecode = async (client, address) => ((await client.getCode({ address })) ?? "0x").toLowerCase();
 let artifact;
 async function loadArtifact() {
   if (!artifact) {
@@ -171,21 +189,16 @@ async function loadArtifact() {
   return artifact;
 }
 export async function verifyContract(address) {
-  const { JsonRpcProvider, isAddress } = await import("ethers");
+  const { isAddress } = await import("viem");
   if (!isAddress(address)) throw new Error("请输入有效的 EVM 合约地址。");
-  const provider = new JsonRpcProvider(NETWORK.rpcUrls[0]);
-  try {
-    if ((await provider.getNetwork()).chainId !== 677n)
-      throw new Error("RPC 网络与 BOT Chain 不一致。");
-    const code = await provider.getCode(address);
-    const compiled = await loadArtifact();
-    if (code.toLowerCase() !== compiled.deployedBytecode.toLowerCase())
-      throw new Error("地址的合约字节码与本项目不一致，请确认部署版本。");
-    if (!save("cfp.contract.677", address))
-      throw new Error("浏览器无法保存配置，请允许本地存储。");
-  } finally {
-    provider.destroy();
-  }
+  const client = await reader();
+  if ((await client.getChainId()) !== 677)
+    throw new Error("RPC 网络与 BOT Chain 不一致。");
+  const compiled = await loadArtifact();
+  if ((await bytecode(client, address)) !== compiled.deployedBytecode.toLowerCase())
+    throw new Error("地址的合约字节码与本项目不一致，请确认部署版本。");
+  if (!save("cfp.contract.677", address))
+    throw new Error("浏览器无法保存配置，请允许本地存储。");
 }
 const sameAddress = (a, b) => typeof a === "string" && typeof b === "string" && a.toLowerCase() === b.toLowerCase();
 function metadataFromUri(uri) {
@@ -205,10 +218,17 @@ function metadataFromUri(uri) {
 function assertNoPending() {
   if (pendingTransaction()) throw new Error("已有待核验 NFT 交易；请只查询原交易，不要重复发送。");
 }
+// Wallet and RPC errors arrive wrapped; the first explicit code in the cause chain decides.
+const find = (error, test) => {
+  for (let e = error, i = 0; e && i < 8; e = e.cause, i++) if (test(e)) return e;
+  return null;
+};
+const errorCode = (error) => find(error, (e) => e.code != null)?.code;
 function cancelled(error) {
-  return error?.code === 4001 || error?.code === "ACTION_REJECTED";
+  const c = errorCode(error);
+  return c === 4001 || c === "ACTION_REJECTED";
 }
-async function broadcast(job, send, report) {
+async function broadcast(job, send, wait, report) {
   job = JSON.parse(JSON.stringify(job));
   const accounts = await window.ethereum.request({ method: "eth_accounts" });
   if (!sameAddress(accounts?.[0], job.owner) || Number(await window.ethereum.request({ method: "eth_chainId" })) !== job.chainId)
@@ -222,12 +242,12 @@ async function broadcast(job, send, report) {
     else report("发送结果尚不明确且未取得哈希；保留占用，请人工核查钱包记录，禁止再次发送。");
     throw error;
   }
-  const pending = { ...reserved, status: "SUBMITTED", hash: submitted.hash };
+  const pending = { ...reserved, status: "SUBMITTED", hash: submitted };
   persistTransaction(pending);
   report("交易已提交，保留原交易哈希，正在等待核验。", pending.hash);
   try {
     // Receipt waiting is bounded; a replacement or timeout never triggers a new send.
-    const receipt = await submitted.wait(1, 60_000);
+    const receipt = await wait(submitted);
     return await settleTransaction(pending, receipt, report);
   } catch (error) {
     error.transactionHash = pending.hash;
@@ -256,8 +276,7 @@ async function settleTransaction(job, receipt, report, rpc) {
   const address = job.kind === "DEPLOY" ? receipt.contractAddress : job.contract;
   if (!address || (job.kind === "DEPLOY" ? receipt.to != null : !sameAddress(receipt.to, address)))
     throw new Error("原交易的目标合约不一致，保留占用。");
-  const code = await client.getCode({ address });
-  if (code?.toLowerCase() !== a.deployedBytecode.toLowerCase())
+  if ((await bytecode(client, address)) !== a.deployedBytecode.toLowerCase())
     throw new Error("回执合约代码与本项目不一致，保留占用。");
   if (job.kind === "DEPLOY") {
     if (!save("cfp.contract.677", address)) throw new Error("部署已成功但地址无法保存；保留原交易记录。");
@@ -265,12 +284,11 @@ async function settleTransaction(job, receipt, report, rpc) {
     report(`合约已部署并核验：${address}`, job.hash);
     return address;
   }
-  const { Interface, keccak256, toUtf8Bytes } = await import("ethers");
-  if (keccak256(toUtf8Bytes(job.edition.uri)) !== job.digest) throw new Error("待确认快照摘要不一致，保留占用。");
-  const abi = new Interface(a.abi);
+  const { decodeEventLog, keccak256, stringToHex } = await import("viem");
+  if (keccak256(stringToHex(job.edition.uri)) !== job.digest) throw new Error("待确认快照摘要不一致，保留占用。");
   const event = receipt.logs.filter((log) => sameAddress(log.address, address)).map((log) => {
-    try { return abi.parseLog(log); } catch { return null; }
-  }).find((log) => log?.name === "FingerprintMinted" && sameAddress(log.args.collector, job.owner) && log.args.digest === job.digest);
+    try { return decodeEventLog({ abi: a.abi, data: log.data, topics: log.topics }); } catch { return null; }
+  }).find((log) => log?.eventName === "FingerprintMinted" && sameAddress(log.args.collector, job.owner) && log.args.digest === job.digest);
   if (!event) throw new Error("原交易没有匹配的 NFT 铸造事件，保留占用。");
   const tokenId = event.args.tokenId;
   const read = (functionName) => client.readContract({ address, abi: a.abi, functionName, args: [tokenId] });
@@ -309,15 +327,11 @@ export async function queryPendingTransaction(report) {
 export async function deployContract(report) {
   return withTransactionLock(async () => {
     assertNoPending();
-    const { ContractFactory } = await import("ethers");
-    const { signer: s } = await signer(), a = await loadArtifact();
-    const owner = await s.getAddress();
-    const factory = new ContractFactory(a.abi, a.bytecode, s);
+    const { provider, client, account: owner } = await signer(), a = await loadArtifact();
     report("请在钱包中核对部署费用并确认。");
-    return broadcast({ kind: "DEPLOY", chainId: 677, owner }, async () => {
-      const contract = await factory.deploy();
-      return contract.deploymentTransaction();
-    }, report);
+    return broadcast({ kind: "DEPLOY", chainId: 677, owner },
+      () => client.deployContract({ abi: a.abi, bytecode: a.bytecode, account: owner }),
+      receiptOf(provider), report);
   });
 }
 export async function mintEdition(edition, report) {
@@ -329,23 +343,23 @@ export async function mintEdition(edition, report) {
     const address = contractAddress();
     if (!address) throw new Error("尚未配置 NFT 合约，请先部署或填写合约地址。");
     if (edition.uri.length > 18000) throw new Error("快照超过合约大小限制，请减少元数据后重试。");
-    const { Contract, keccak256, toUtf8Bytes } = await import("ethers");
-    const { provider, signer: s } = await signer(), a = await loadArtifact();
-    if ((await provider.getCode(address)).toLowerCase() !== a.deployedBytecode.toLowerCase())
+    const { keccak256, stringToHex } = await import("viem");
+    const { provider, client, account: owner } = await signer(), a = await loadArtifact();
+    if ((await bytecode(provider, address)) !== a.deployedBytecode.toLowerCase())
       throw new Error("合约代码与本项目不匹配，已停止铸造。");
-    const owner = await s.getAddress(), contract = new Contract(address, a.abi, s);
-    const digest = keccak256(toUtf8Bytes(edition.uri));
-    if (await contract.minted(owner, digest)) throw new Error("这个账户已收藏过同一份快照。");
+    const digest = keccak256(stringToHex(edition.uri));
+    if (await provider.readContract({ address, abi: a.abi, functionName: "minted", args: [owner, digest] }))
+      throw new Error("这个账户已收藏过同一份快照。");
     report("请在钱包中核对 Gas 费用并确认铸造。");
     return broadcast({ kind: "MINT", chainId: 677, owner, contract: address, digest,
       edition: { uri: edition.uri, metadata: edition.metadata, snapshot: edition.snapshot } },
-    () => contract.mint(edition.uri), report);
+    () => client.writeContract({ address, abi: a.abi, functionName: "mint", args: [edition.uri], account: owner }),
+    receiptOf(provider), report);
   });
 }
 export function errorMessage(error) {
-  if (error.code === 4001 || error.code === "ACTION_REJECTED")
-    return "你取消了钱包操作，未完成上链。";
-  if (error.code === "INSUFFICIENT_FUNDS")
+  if (cancelled(error)) return "你取消了钱包操作，未完成上链。";
+  if (errorCode(error) === "INSUFFICIENT_FUNDS" || find(error, (e) => e.name === "InsufficientFundsError"))
     return "主网 BOT 余额不足以支付 Gas，请补充后重试。";
   return error.shortMessage || error.message || "操作失败，请稍后重试。";
 }

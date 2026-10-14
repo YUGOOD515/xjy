@@ -1,6 +1,6 @@
 # A → D：团队集成读侧交付
 
-日期：2026-10-07。对应 [D2A-handoff.md](D2A-handoff.md)，交付于 `codex/integrate-guardian`。最新实测见 [团队验收](docs/team-integration-acceptance.md)；原交接文档中的待验收状态保留为交接时的历史记录。
+日期：2026-10-07。对应 [D2A-handoff.md](D2A-handoff.md)，交付于 `codex/integrate-guardian`。最新实测见 [团队验收](../../team-integration-acceptance.md)；原交接文档中的待验收状态保留为交接时的历史记录。
 
 1. **WETH balance 作为 ETH 逻辑资产余额：同意，已实现。** Fork 只读 WETH/USDC ERC20；原生 ETH 不计可交易资产，仅用于 gas。
 2. **读侧钱包必须等于受保护钱包：同意，已实现。** 读侧校验请求地址与配置钱包，忽略大小写；D 校验签名钱包/请求和持久状态绑定。

@@ -4,15 +4,15 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "vite";
-import { compileSculpture } from "./compile-sculpture.mjs";
+import { sculptureSourceHash } from "./compile-sculpture.mjs";
 import { coins } from "../web/fingerprint/data.js";
 const shader = JSON.parse(
   readFileSync("web/fingerprint/sculpture-shader.json", "utf8"),
 );
-assert.deepEqual(
-  shader,
-  compileSculpture(),
-  "generated shader must match the build-time source",
+assert.equal(
+  shader.sourceSha256,
+  sculptureSourceHash(),
+  "sculpture-source.mjs changed: rerun `pnpm sculpture:compile` (see the script header)",
 );
 await build({
   logLevel: "error",
@@ -42,11 +42,9 @@ try {
       { value: 68 },
     );
     assert.equal(mesh.material.fragmentShader, shader.fragmentShader);
-    assert.equal(mesh.material.uniforms.mood.value, 0.68);
-    assert.equal(mesh.material.uniforms._scale.value, 1.5);
-    assert.ok(mesh.geometry.attributes.position.count > 0);
-    mesh.geometry.dispose();
-    mesh.material.dispose();
+    assert.equal(mesh.material.uniforms.mood, 0.68);
+    assert.equal(mesh.material.uniforms._scale, 1.5);
+    assert.equal(mesh.geometry.index.length, 336);
   }
 } finally {
   globalThis.eval = original;
@@ -66,12 +64,14 @@ for (const file of assets) {
     !js.includes("createSculpture("),
     "runtime DSL compilation must not ship",
   );
+  assert.ok(!js.includes("three.js r"), "Three.js must not ship to browsers");
 }
 const result = {
-  precompiledSource: "matches",
+  precompiledSource: "hash matches",
   minifiedProductionMaterials: coins.length,
   runtimeEval: "not used",
   browserCompiler: "absent",
+  threeJs: "absent",
   gpuRendering: "not visually verified",
 };
 mkdirSync("output/sculpture-regression", { recursive: true });

@@ -86,7 +86,7 @@ const signal = await services.signal.getSignal();               // OnchainSignal
 - [ ] market 命令显示当前/5m/1h oracle 数据，证据说明目标与实际区块时刻；波动代理公式正确，0% 不被当成失败或连续 tick。
 - [ ] signal 命令显示两个相邻 300 秒窗口、真实 gross sell USD、有限 ratio、去重交易/发起者数量和结构化证据；零基线/坏日志明确失败。
 - [ ] JSON 输出符合冻结 DTO 和严格读取外壳；坏地址在 RPC 前拒绝，RPC/过期价格/重组失败无 Mock 替补，无凭据泄漏。
-- [ ] 首页 `/api/rescue` 仍运行原 Mock 闭环，Aave `/position` 扩展测试通过；没有签名或写链。
+- [ ] 首页 `/api/rescue` 仍运行原 Mock 闭环；没有签名或写链。
 
 最终真实 RPC 与全量验证记录见 [A 执行计划](loopx/plans/2026-10-07-ethereum-live-data.md)。行情与余额随链变化，不以固定数值作为后续验收要求。
 

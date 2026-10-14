@@ -18,7 +18,7 @@ const rescue = load("rescue-api");
 const endpoint = rescue.paths["/api/rescue"].post;
 
 describe("published OpenAPI contracts", () => {
-  it.each(["rescue-api", "position-api"])("has valid JSON and resolvable internal references: %s", (name) => {
+  it.each(["rescue-api"])("has valid JSON and resolvable internal references: %s", (name) => {
     const document = load(name);
     function visit(value: unknown) {
       if (!value || typeof value !== "object") return;

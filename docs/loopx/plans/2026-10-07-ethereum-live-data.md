@@ -29,7 +29,7 @@ slices:
 
 建立只读client、canonical快照、时间查找、币种/池ABI和安全错误；历史/当前报价及更新证据可验证。
 
-> writes: `src/modules/onchain/ethereum-reader.ts, src/modules/onchain/ethereum-contracts.ts, src/modules/onchain/read-error.ts, tests/ethereum-reader.test.ts, .loopx/intake/2026-10-07-ethereum-live-data/, docs/loopx/design/2026-10-07-ethereum-live-data/, docs/loopx/plans/2026-10-07-ethereum-live-data.md`
+> writes: `src/modules/onchain/ethereum-reader.ts, src/modules/onchain/ethereum-contracts.ts, src/modules/onchain/read-error.ts, tests/ethereum-reader.test.ts, docs/loopx/intake/2026-10-07-ethereum-live-data/, docs/loopx/design/2026-10-07-ethereum-live-data/, docs/loopx/plans/2026-10-07-ethereum-live-data.md`
 > anchors: `AC-001,003,006; D-001,002; TC-001,002`
 > verify: `pnpm exec vitest run tests/ethereum-reader.test.ts; pnpm typecheck`
 > review: snapshot时间/hash一致性、oracle新鲜度与来源、只读权限/凭据脱敏

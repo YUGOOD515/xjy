@@ -66,7 +66,7 @@ slices:
 
 更新编排、装配和API，成功后重读并验证真实数量变化和风险敞口；更新README/schema说明/OpenAPI/历史定位和ABCD。所有独立结果逐一读入整合。
 
-> writes: `src/modules/rescue/, src/integration/rescue.ts, src/app/api/rescue/, tests/{orchestrator,api,openapi}.test.ts, .env.example, docs/loopx/design/2026-10-06-risk-guardian/, docs/loopx/plans/2026-10-06-risk-guardian.md, .loopx/intake/2026-10-06-risk-guardian/`
+> writes: `src/modules/rescue/, src/integration/rescue.ts, src/app/api/rescue/, tests/{orchestrator,api,openapi}.test.ts, .env.example, docs/loopx/design/2026-10-06-risk-guardian/, docs/loopx/plans/2026-10-06-risk-guardian.md, docs/loopx/intake/2026-10-06-risk-guardian/`
 > anchors: `D-001..006, AC-001..007, TC-001..009`
 > verify: `pnpm typecheck; pnpm test; pnpm build; 浏览器Run Demo; git diff --stat`
 > review: exact diff、合同/权限/效果验证、Aave兼容和未扩需求

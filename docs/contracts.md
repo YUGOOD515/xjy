@@ -1,6 +1,6 @@
 # Guardian 核心数据合同
 
-唯一真源是 [Zod schemas](../src/domain/schemas/index.ts)，[TypeScript types](../src/domain/types/index.ts) 使用 `z.infer` 推导。模块仅交换这些结构；Portfolio 不携带行情字段，Market 独立读取。所有对象严格拒绝未知字段。此前核心借贷合同已被替换；Aave 专属合同保留在 [extensions/aave/schemas.ts](../src/extensions/aave/schemas.ts)，不属于下述核心 Domain。
+唯一真源是 [Zod schemas](../src/domain/schemas/index.ts)，[TypeScript types](../src/domain/types/index.ts) 使用 `z.infer` 推导。模块仅交换这些结构；Portfolio 不携带行情字段，Market 独立读取。所有对象严格拒绝未知字段。此前核心借贷合同已被替换；可选 Aave 只读扩展已于 2026-10-14 移除（见 [CHANGELOG](CHANGELOG.md)）。
 
 ## 公共规则
 
@@ -283,9 +283,3 @@ type RescueProblem = {
 ```
 
 400/INVALID_REQUEST 表示请求错误，500/RESCUE_FAILED 表示配置或流程失败。Content-Type 为 application/problem+json；type 为 `urn:xjy:rescue:<code>`；不泄漏原始异常、端点或凭据。URL 不变，但旧借贷 DTO 被整体替换，不提供旧格式 shim。见 [Rescue OpenAPI](rescue-api.openapi.json)。
-
-## Aave 可选扩展合同
-
-主合同没有 Aave、debt、HF 或 REPAY 字段。现有 `/position`、`POST /api/position` 使用 [扩展本地 schemas](../src/extensions/aave/schemas.ts) / [types](../src/extensions/aave/types.ts)：AavePositionState 仍为 wallet/collateralUsd/debtUsd/healthFactor/ethPrice/timestamp/blockNumber?；ACTIVE 包含 position、marketChanges、evidence；NO_DEBT 包含 position=null、message、evidence，不产生假的 HF。
-
-PositionEvidence 的 chainId/network/protocol、Provider/Pool/Oracle/WETH、blockNumber/hash/time 以及预留 txHash 保持；PositionMarketChanges 仍为真实7200区块窗口及实际秒数。查询不产生 txHash。HTTP 200/400/502/503、LIVE头、错误instance及canonical hash要求保持，详见 [Aave 文档](aave-position.md) 和 [Position OpenAPI](position-api.openapi.json)。该数据不作为核心 Portfolio 或5m/1h Market 的来源。

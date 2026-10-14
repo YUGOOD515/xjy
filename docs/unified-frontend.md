@@ -13,13 +13,12 @@
 | `/guardian` | 原首页的策略表单、监控、单次运行、事件历史、Before/After 与独立核验 | 服务端配置的 MOCK/FORK；未接入指纹行情自动交易 |
 | `/investigate` | 外层交易事实、指定池买卖证据、未知项、出处与下一步 | Ethereum 主网只读；保留原始金额精度 |
 | `/risk-lab` | 风险曲线、输入指标、模型、证据和研究建议 | 继续显示明确的研究样本来源，不伪装实时预测 |
-| `/position` | Aave 独立扩展保留，已从主导航、ETH 工作台及研究导航隐藏 | 主网只读；原深链接/API 保留，不进入当前展示主线 |
 | `/attestations` | 固定、下载、导入报告，部署/发布/查询与内容核验 | 原报告哈希与待确认交易规则保留，BOT 968 |
 | `/collection` | 指纹 NFT 的本地收藏记录 | 按钱包过滤；历史记录不是当前全链资产索引 |
 
-行情图鉴初始覆盖 ETH、BTC、SOL、BNB、LINK、UNI、AVAX、DOGE。业务页面中的 WETH、USDC 使用同一身份注册体系，并有可访问的身份详情页；没有为它们捏造独立市场数值。Aave 聚合仓位不被改写为未知代币明细。
+行情图鉴初始覆盖 ETH、BTC、SOL、BNB、LINK、UNI、AVAX、DOGE。业务页面中的 WETH、USDC 使用同一身份注册体系，并有可访问的身份详情页；没有为它们捏造独立市场数值。
 
-原 `/investigate`、`/risk-lab`、`/position`、`/attestations` 深链接保持有效；原首页的保护实验移至 `/guardian`。旧货币指纹的 `#/coin/...` 和 `#/collection` 链接可迁移到新路径。
+原 `/investigate`、`/risk-lab`、`/attestations` 深链接保持有效（Aave 扩展 `/position` 已于 2026-10-14 删除）；原首页的保护实验移至 `/guardian`。旧货币指纹的 `#/coin/...` 和 `#/collection` 链接可迁移到新路径。
 
 ## 统一设计
 
@@ -55,7 +54,7 @@ web/
   pages/
     guardian.js              策略、监控与保护结果
     rescue-display.js        独立核验与压力图展示
-    research.js              交易核验、Risk Lab、Aave
+    research.js              交易核验、Risk Lab
     attestations.js           报告存证完整流程
   public/                    图标与 NFT 合约构建产物
 server/
@@ -127,8 +126,10 @@ HTTP 验证覆盖页面深链接、静态资源、同源限制、策略保存、
 
 用户反馈生产预览无法显示流体。非浏览器复现表明：未打包 Shader Park 可创建材质，但原生产包运行 DSL 编译时报 `ReferenceError: input is not defined`。这属于构建兼容故障，原“当前设备无法显示”的提示不足以描述原因。
 
-现在由 `scripts/sculpture-source.mjs` 保存 DSL，`scripts/compile-sculpture.mjs` 在 `pnpm build` 时预编译为 `web/fingerprint/sculpture-shader.json`。浏览器只加载 `sculpture.js`、Three.js 和 GLSL，不再执行 Shader Park 的 JavaScript 编译器，也避免引入两份 Three.js。纹理绘制和 NFT SVG 未改变。
+现在由 `scripts/sculpture-source.mjs` 保存 DSL，GLSL 预编译结果 `web/fingerprint/sculpture-shader.json` 直接入库（含源码 SHA-256）。浏览器只加载 `sculpture.js` 和 GLSL，不再执行 Shader Park 的 JavaScript 编译器。纹理绘制和 NFT SVG 未改变。
+
+2026-10-14 起 `sculpture.js` 不再依赖 Three.js，改为约 30 KB 的原生 WebGL2：提交给 GPU 的顶点/片元着色器源码（含原 Three.js r155 ShaderMaterial 前缀）、上下文参数、SphereGeometry(1.5, 8, 8) 顶点与索引、相机/旋转矩阵、混合与剔除状态均与原实现一致，并用同一浏览器逐像素截图对比验证。修改 DSL 时临时安装 `shader-park-core@0.2.8` 后运行 `pnpm sculpture:compile`（步骤见脚本头注释），`pnpm test:sculpture` 会在源码哈希不一致时失败。
 
 失败状态分别处理资源/初始化错误、WebGL 上下文创建失败、着色器编译失败和上下文丢失，异常时释放资源并回到纹理视图。
 
-验证命令：先 `pnpm build`，再 `pnpm test:sculpture`。该回归会通过生产压缩构建创建 8 个币种的材质，禁止运行时 eval，校验生成着色器与源码一致；`tests/frontend/sculpture.test.ts` 检查初始化失败清理和上下文丢失等路径。验证不打开浏览器，不代表用户设备的实际 GPU 渲染或视觉已经验收。
+验证命令：先 `pnpm build`，再 `pnpm test:sculpture`。该回归会通过生产压缩构建创建 8 个币种的材质，禁止运行时 eval，校验预编译着色器与 DSL 源码哈希一致、生产包不含 Three.js；`tests/frontend/sculpture.test.ts` 检查初始化失败清理和上下文丢失等路径。验证不打开浏览器，不代表用户设备的实际 GPU 渲染或视觉已经验收。

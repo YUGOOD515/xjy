@@ -180,4 +180,4 @@ D 从 main `bc1d504` 开出 `d/guardian-monitor-integration`，整合 C 更新 `
 - C 通过注入的 signing client 运行：D 在广播前持久化本地签名交易的确定性 hash；网络不重试广播。未知结果仅查回执，重启不清除事件。C 内存 submissions 不是持久化依据。
 - C 错误文本在 D 边界转为有限阶段码，避免 RPC 原始错误外泄。成功 swap 后独立重读，验证失败保留事件并暂停。无自动 reset/retry API。
 
-详细实现、未覆盖边界和可复现验收命令：[guardian-monitor.md](docs/guardian-monitor.md)。D 的自动化用例覆盖持续超标、并发、重复请求、恢复、未知结果、重启以及暂停/恢复。Fork 完整实测结果只在实际运行完成后记录，不把跳过的 C Fork 测试算作通过。
+详细实现、未覆盖边界和可复现验收命令：[guardian-monitor.md](../../guardian-monitor.md)。D 的自动化用例覆盖持续超标、并发、重复请求、恢复、未知结果、重启以及暂停/恢复。Fork 完整实测结果只在实际运行完成后记录，不把跳过的 C Fork 测试算作通过。

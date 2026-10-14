@@ -5,7 +5,6 @@ import { DEMO_POLICY_CONFIG, DEMO_WALLET } from "@/mocks/scenarios";
 import { Recovery } from "@/integration/guardian/contracts";
 import {
   mount as research,
-  positionReportHTML,
   transactionReportHTML,
 } from "../../web/pages/research.js";
 import { mount as guardian } from "../../web/pages/guardian.js";
@@ -68,7 +67,7 @@ describe("native frontend behavior without a browser", () => {
           Response.json({ detail: "RPC 未配置" }, { status: 503 }),
         ),
     );
-    dispose = await research(root(), "position");
+    dispose = await research(root(), "investigate");
     click('[data-research="example"]');
     root()
       .querySelector("form")!
@@ -77,24 +76,6 @@ describe("native frontend behavior without a browser", () => {
     await wait();
     expect(root().textContent).toContain("RPC 未配置");
     expect(root().querySelector("#research-result")!.innerHTML).toBe("");
-  });
-  it("does not claim a health factor or recommendation for a no-debt response", () => {
-    const html = positionReportHTML({
-      status: "NO_DEBT",
-      message: "无债务",
-      wallet: DEMO_WALLET,
-      evidence: {
-        blockNumber: 42,
-        blockHash: "0x123",
-        blockTimestamp: "2026-10-07T00:00:00Z",
-        poolAddress: DEMO_WALLET,
-        oracleAddress: DEMO_WALLET,
-        providerAddress: DEMO_WALLET,
-        ethAssetAddress: DEMO_WALLET,
-      },
-    });
-    expect(html).toContain("不计算健康因子");
-    expect(html).not.toContain("Health Factor");
   });
   it("preserves decimal strings and escapes external text in transaction evidence", () => {
     const html = transactionReportHTML({

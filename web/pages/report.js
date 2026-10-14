@@ -5,9 +5,9 @@ import { esc, pct, time, pageHead, badge, panel, list, facts, request, lifecycle
 
 const conclusions = { ANOMALY_SIGNALS: "发现异常线索", NO_CLEAR_ANOMALY: "未发现明确异常", INSUFFICIENT_DATA: "数据不足" };
 const sourceLabels = { live: "采集时有效", stale: "过期 · 仅历史背景", unavailable: "不可用" };
-const refs = (ids) => ids.map((id) => `<a class="report-citation" href="#evidence-${esc(id)}">[${esc(id)}]</a>`).join(" ");
+const refs = (ids) => ids.map((id) => `<a class="report-citation text-moss [text-decoration:underline] text-[11px]" href="#evidence-${esc(id)}">[${esc(id)}]</a>`).join(" ");
 function evidenceHTML(snapshot) {
-  return snapshot.evidence.map((e) => `<section class="report-evidence" id="evidence-${esc(e.id)}"><h3>${esc(e.id)} / ${esc(e.source)}</h3><p>${esc(sourceLabels[e.status])} · 采集 ${esc(time(e.collectedAt))} · 观测 ${esc(time(e.observedAt))}</p><p>${esc(e.scope)}</p><a class="external-link" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">查看来源 ↗</a><details><summary>原始数据</summary><pre>${esc(JSON.stringify(e.data, null, 2))}</pre></details></section>`).join("");
+  return snapshot.evidence.map((e) => `<section class="report-evidence [padding:12px_0_22px] [border-bottom:1px_solid_var(--color-line)] [scroll-margin-top:80px]" id="evidence-${esc(e.id)}"><h3>${esc(e.id)} / ${esc(e.source)}</h3><p>${esc(sourceLabels[e.status])} · 采集 ${esc(time(e.collectedAt))} · 观测 ${esc(time(e.observedAt))}</p><p>${esc(e.scope)}</p><a class="external-link text-clay-dark [text-decoration:underline] [text-underline-offset:3px]" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">查看来源 ↗</a><details><summary>原始数据</summary><pre>${esc(JSON.stringify(e.data, null, 2))}</pre></details></section>`).join("");
 }
 function keyDataHTML(snapshot) {
   const value = (group) => snapshot.evidence.find((e) => e.group === group)?.data;
@@ -21,27 +21,27 @@ function keyDataHTML(snapshot) {
 }
 export function reportHTML(report) {
   const { analysis: r, snapshot: s } = report;
-  return `<article class="report-paper" aria-label="A4 调查报告"><header class="report-masthead"><p class="scope-label">VERDANT / ETHEREUM RESEARCH</p><span>外部 Agent 调查 · ${s.windowDays === 1 ? "24h" : "7d"}</span><h2>以太坊<br>异动调查报告</h2><p>${esc(time(report.acceptedAt))} · ETH</p></header>
-    <section class="report-lead"><span class="scope-label">01 / 调查结论</span><h3>${esc(conclusions[r.conclusion])}</h3><p>${esc(r.summary)}</p><p class="note">外部 Agent 的解释未经独立核实。已校验格式与引用，不等于已证实因果。</p></section>
+  return `<article class="report-paper [width:min(100%,210mm)] [min-height:297mm] [margin:28px_auto] [padding:clamp(20px,5vw,62px)] [border:1px_solid_var(--color-line)] bg-paper [box-shadow:0_10px_32px_#26352f0d] [overflow-wrap:anywhere] phone:[min-height:auto] phone:[margin:16px_auto] phone:[padding:20px_16px]" aria-label="A4 调查报告"><header class="report-masthead [border-bottom:2px_solid_var(--color-ink)] pb-7"><p class="scope-label text-[11px] text-clay-dark m-0">VERDANT / ETHEREUM RESEARCH</p><span>外部 Agent 调查 · ${s.windowDays === 1 ? "24h" : "7d"}</span><h2>以太坊<br>异动调查报告</h2><p>${esc(time(report.acceptedAt))} · ETH</p></header>
+    <section class="report-lead bg-sand p-6 [margin:26px_0] phone:p-[18px]"><span class="scope-label text-[11px] text-clay-dark m-0">01 / 调查结论</span><h3>${esc(conclusions[r.conclusion])}</h3><p>${esc(r.summary)}</p><p class="note">外部 Agent 的解释未经独立核实。已校验格式与引用，不等于已证实因果。</p></section>
     ${panel("02 / 关键数据", keyDataHTML(s))}
-    ${panel("03 / 观察事实", r.observations.length ? r.observations.map((o) => `<div class="report-finding"><p>${esc(o.statement)}</p><small>${o.basis === "CURRENT" ? "基于快照采集时数据" : "历史背景"}</small> ${refs(o.evidenceIds)}</div>`).join("") : '<p>没有可提交的观察事实。</p>')}
-    ${panel("04 / 解释与反证", r.hypotheses.length ? r.hypotheses.map((h) => `<div class="report-finding"><p>${esc(h.explanation)}</p><p>支持 ${refs(h.supportingEvidenceIds)}</p><p>反证 ${h.counterEvidenceIds.length ? refs(h.counterEvidenceIds) : "尚无引用；不代表不存在反证"}</p><p class="note">${esc(h.uncertainty)}</p></div>`).join("") : '<p>现有证据不足以提出原因解释。</p>')}
+    ${panel("03 / 观察事实", r.observations.length ? r.observations.map((o) => `<div class="report-finding [border-bottom:1px_solid_var(--color-line)] pb-4 mb-[18px]"><p>${esc(o.statement)}</p><small>${o.basis === "CURRENT" ? "基于快照采集时数据" : "历史背景"}</small> ${refs(o.evidenceIds)}</div>`).join("") : '<p>没有可提交的观察事实。</p>')}
+    ${panel("04 / 解释与反证", r.hypotheses.length ? r.hypotheses.map((h) => `<div class="report-finding [border-bottom:1px_solid_var(--color-line)] pb-4 mb-[18px]"><p>${esc(h.explanation)}</p><p>支持 ${refs(h.supportingEvidenceIds)}</p><p>反证 ${h.counterEvidenceIds.length ? refs(h.counterEvidenceIds) : "尚无引用；不代表不存在反证"}</p><p class="note">${esc(h.uncertainty)}</p></div>`).join("") : '<p>现有证据不足以提出原因解释。</p>')}
     ${panel("05 / 尚不能确认", list(r.uncertainties))}${panel("06 / 下一步核查", list(r.nextChecks))}
     ${panel("07 / 来源与数据", evidenceHTML(s))}${panel("08 / 范围与方法", list(s.limitations) + report.indicatorDefinitions.map((d) => `<h3>${esc(d.id)}</h3><p><code>${esc(d.formula)}</code></p><p>${esc(d.unit)} · ${esc(d.limitation)}</p>`).join(""))}
-    <footer class="report-footnote">报告 ${esc(report.reportId)}<br>快照 ${esc(s.snapshotId)} · ${esc(time(s.createdAt))}<br>仅当前页面保存 · 未签名 / 未执行交易 / 未上链</footer></article>`;
+    <footer class="report-footnote [border-top:2px_solid_var(--color-ink)] pt-4 text-ink-soft">报告 ${esc(report.reportId)}<br>快照 ${esc(s.snapshotId)} · ${esc(time(s.createdAt))}<br>仅当前页面保存 · 未签名 / 未执行交易 / 未上链</footer></article>`;
 }
 
 export async function mount(root) {
   const life = lifecycle(root);
   root.innerHTML = pageHead("Ethereum 异动调查报告", "网站准备数据，外部 Agent 调查；把观察、解释与尚不能确认的部分放在同一份报告里。", "WEBMCP · 外部 Agent")
-    + `<div class="status-band">${badge("ETH 市场与生态观察")}${badge("无需钱包 · 无交易权限")}</div>
-    <section class="workspace-panel"><form id="eth-report-form" class="report-controls"><label for="report-window">观察窗口</label><select id="report-window"><option value="1">24 小时</option><option value="7">7 天</option></select><button class="button-primary" type="submit">准备真实数据</button></form>
+    + `<div class="status-band flex flex-wrap items-center gap-3 [padding:15px_0] text-[11px] text-ink-soft">${badge("ETH 市场与生态观察")}${badge("无需钱包 · 无交易权限")}</div>
+    <section class="workspace-panel [border-top:2px_solid_var(--color-ink)] [padding:23px_0] min-w-0 phone:[padding:22px_0]"><form id="eth-report-form" class="report-controls flex flex-wrap items-center gap-[14px]"><label for="report-window">观察窗口</label><select id="report-window"><option value="1">24 小时</option><option value="7">7 天</option></select><button class="button-primary inline-flex justify-center items-center gap-[14px] [padding:12px_18px] min-h-[43px] [border:1px_solid_var(--color-ink)] [border-radius:3px] [background:var(--color-ink)] text-paper tablet:[padding:11px_13px]" type="submit">准备真实数据</button></form>
     <p id="webmcp-status" role="status">正在检查 WebMCP 支持…</p><p class="note">在支持 WebMCP 的应用内浏览器打开本页，让外部 Agent 使用网站工具调查 ETH 并提交报告。工具注册不代表已连接 Agent。网站不请求内置模型。</p>
     <details><summary>给外部 Agent 的任务说明</summary><p>请读取此页的 ETH 快照与指标定义，按需查看证据。综合判断是否存在异动线索，区分事实、假设与未知项，使用本次证据 ID 提交报告。不要把新闻标题当作已核实原因，也不要生成交易指令。</p></details>
     <p class="note">只保留当前页面会话；刷新或离开即清空。报告完成后可下载 JSON。没有异常也是有效结果。</p></section>
     <p id="report-status" role="status" aria-live="polite">尚未准备数据。</p><div id="report-coverage"></div>
-    <details class="raw-details"><summary>实际工具调用记录</summary><ol id="report-calls"></ol></details>
-    <div id="report-output" hidden><div class="report-toolbar" aria-label="报告视图"><div><button type="button" data-report-view="a4" aria-pressed="true">A4 阅读版</button><button type="button" data-report-view="json" aria-pressed="false">JSON 数据版</button></div><div><button type="button" data-export="copy">复制 JSON</button><button type="button" data-export="download">下载 JSON</button></div></div><p id="report-export-status" role="status"></p><div id="report-a4"></div><pre id="report-json" class="report-json" tabindex="0" hidden></pre></div>`;
+    <details class="raw-details [border-top:1px_solid_var(--color-line)] [padding:16px_0] [margin:16px_0]"><summary>实际工具调用记录</summary><ol id="report-calls"></ol></details>
+    <div id="report-output" hidden><div class="report-toolbar flex flex-wrap items-center gap-[14px] justify-between [border-block:1px_solid_var(--color-line)] [padding:16px_0] [margin:24px_0] phone:items-start phone:gap-[10px]" aria-label="报告视图"><div><button type="button" data-report-view="a4" aria-pressed="true">A4 阅读版</button><button type="button" data-report-view="json" aria-pressed="false">JSON 数据版</button></div><div><button type="button" data-export="copy">复制 JSON</button><button type="button" data-export="download">下载 JSON</button></div></div><p id="report-export-status" role="status"></p><div id="report-a4"></div><pre id="report-json" class="report-json [white-space:pre-wrap] [overflow-wrap:anywhere] [font:12px/1.8_monospace] max-w-full [padding:clamp(12px,3vw,30px)] bg-panel [border:1px_solid_var(--color-line)]" tabindex="0" hidden></pre></div>`;
   const identityCleanup = mountIdentity(root);
   const form = root.querySelector("form");
   const status = root.querySelector("#report-status");

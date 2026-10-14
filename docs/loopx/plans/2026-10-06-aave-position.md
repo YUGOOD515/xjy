@@ -28,7 +28,7 @@ slices:
 
 建立新增 strict snapshot/error schema 与 infer 类型，冻结 ACTIVE/NO_DEBT 语义。安装固定版本 viem 和官方地址包，已有 schema 无修改。
 
-> writes: `src/domain/schemas/position-read.ts, src/domain/types/position-read.ts, tests/position-read-schemas.test.ts, package.json, pnpm-lock.yaml, pnpm-workspace.yaml, .loopx/intake/, docs/loopx/design/, docs/loopx/plans/`
+> writes: `src/domain/schemas/position-read.ts, src/domain/types/position-read.ts, tests/position-read-schemas.test.ts, package.json, pnpm-lock.yaml, pnpm-workspace.yaml, docs/loopx/intake/, docs/loopx/design/, docs/loopx/plans/`
 > anchors: `D-001, D-003, AC-001, TC-002`
 > verify: `pnpm typecheck; pnpm test tests/position-read-schemas.test.ts`
 

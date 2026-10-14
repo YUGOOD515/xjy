@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { TransactionCheckReportSchema } from "@/domain/schemas/transaction-check";
-import { PositionSnapshotSchema } from "@/extensions/aave/schemas";
 import { mount } from "../../web/pages/research.js";
 
 vi.mock("../../web/fingerprint/render.js", async (original) => ({
@@ -12,24 +11,6 @@ vi.mock("../../web/fingerprint/render.js", async (original) => ({
 const txHash = `0x${"ab".repeat(32)}`;
 const otherHash = `0x${"ef".repeat(32)}`;
 const blockHash = `0x${"cd".repeat(32)}`;
-const positionWallet = `0x${"ab".repeat(20)}`;
-function positionSnapshot(wallet: string, status: "ACTIVE" | "NO_DEBT") {
-  const evidence = {
-    chainId: 1, network: "ethereum-mainnet", protocol: "aave-v3",
-    providerAddress: wallet, poolAddress: wallet, oracleAddress: wallet, ethAssetAddress: wallet,
-    blockNumber: 20000, blockHash, blockTimestamp: "2026-10-06T12:00:00.000Z",
-  };
-  const common = { mode: "LIVE", wallet, evidence };
-  return PositionSnapshotSchema.parse(status === "ACTIVE" ? {
-    ...common, status,
-    position: { wallet, collateralUsd: 200000, debtUsd: 100000, healthFactor: 1.08, ethPrice: 2800, timestamp: evidence.blockTimestamp, blockNumber: evidence.blockNumber },
-    marketChanges: {
-      ethChangePct: -5, previousEthPrice: 2900, referenceBlockNumber: 12800,
-      referenceBlockHash: `0x${"ef".repeat(32)}`, referenceTimestamp: "2026-10-05T12:00:00.000Z",
-      referenceOracleAddress: wallet, lookbackBlocks: 7200, lookbackSeconds: 86400,
-    },
-  } : { ...common, status, position: null, message: "无借款债务。" });
-}
 const report = (hash = txHash) => TransactionCheckReportSchema.parse({
   mode: "LIVE_READ_ONLY",
   network: "ethereum-mainnet",
@@ -119,27 +100,6 @@ it("rejects a schema-valid response for another transaction", async () => {
   expect(result().innerHTML).toBe("");
   expect(error().hidden).toBe(false);
   expect(error().textContent).toContain("本次查询不一致");
-});
-
-it.each(["ACTIVE", "NO_DEBT"] as const)("rejects a schema-valid %s position for another wallet", async (status) => {
-  vi.stubGlobal("fetch", vi.fn(async () => Response.json(positionSnapshot(`0x${"ef".repeat(20)}`, status))));
-  dispose = await mount(root(), "position");
-  input().value = positionWallet;
-  submit();
-  await settle();
-  expect(result().innerHTML).toBe("");
-  expect(error().hidden).toBe(false);
-  expect(error().textContent).toContain("本次查询钱包不一致");
-});
-
-it.each(["ACTIVE", "NO_DEBT"] as const)("accepts a %s position for the same wallet regardless of address case", async (status) => {
-  vi.stubGlobal("fetch", vi.fn(async () => Response.json(positionSnapshot(positionWallet, status))));
-  dispose = await mount(root(), "position");
-  input().value = `  0x${"AB".repeat(20)}  `;
-  submit();
-  await settle();
-  expect(error().hidden).toBe(true);
-  expect(result().textContent).toContain(status === "ACTIVE" ? "Health Factor" : "无债务仓位");
 });
 
 it("locks the query during reading and accepts the same hash in a different case", async () => {

@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="/style.css?direct" />
   </head>
   <body>
-    <a class="skip-link" href="#main">跳到主要内容</a>
-    <header class="site-header">
-      <a class="brand" href="/" aria-label="VERDANT 资产观察首页"
+    <a class="skip-link fixed bg-paper p-[14px] [z-index:100]" href="#main">跳到主要内容</a>
+    <header class="site-header max-w-[1480px] m-auto min-h-[100px] flex items-center gap-7 [border-bottom:1px_solid_var(--color-ink)] laptop:gap-[18px] laptop:flex-wrap">
+      <a class="brand flex items-center gap-[10px] shrink-0 tracking-[-0.5px]" href="/" aria-label="VERDANT 资产观察首页"
         ><svg
           viewBox="0 0 40 40"
           width="36"
@@ -42,13 +42,13 @@
         ><a href="/attestations" data-nav="/attestations">报告存证</a
         ><a href="/collection" data-nav="/collection">指纹收藏</a>
       </nav>
-      <button class="wallet-button" data-action="wallet">
+      <button class="wallet-button [border:1px_solid_var(--color-ink)] [padding:10px_14px] flex gap-2 items-center whitespace-nowrap laptop:ml-auto" data-action="wallet">
         <span aria-hidden="true">▱</span><span id="wallet-label">连接钱包</span>
       </button>
     </header>
     <main id="main" tabindex="-1"></main>
-    <footer class="site-footer">
-      <a class="footer-name" href="/">VERDANT / 让每一次判断有据可循。</a>
+    <footer class="site-footer max-w-[1345px] [margin:0_auto] [padding:29px_0_35px] [border-top:1px_solid_var(--color-ink)] grid grid-cols-[1fr_auto] gap-[17px] text-[11px] text-ink-soft laptop:[margin:0_4.5%] phone:[padding:24px_0] phone:grid-cols-[1fr] phone:gap-[13px]">
+      <a class="footer-name text-ink" href="/">VERDANT / 让每一次判断有据可循。</a>
       <div>
         <button data-action="guide">读懂货币指纹</button
         ><span>BOT Chain Mainnet</span>
